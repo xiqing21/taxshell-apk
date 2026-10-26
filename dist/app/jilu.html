@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>申报记录 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:5; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:40px; }
+.content { padding:14px; }
+.rec-item { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:10px; box-shadow:0 1px 6px #0000000a; }
+.rec-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.rec-head b { font-size:15px; }
+.rec-status { font-size:12px; color:#0a8f56; background:#e8f8f0; border-radius:12px; padding:3px 10px; }
+.rec-row { font-size:13px; color:#666; line-height:2; display:flex; justify-content:space-between; }
+.rec-row span:last-child { color:#222; }
+.empty { text-align:center; color:#999; font-size:14px; padding:50px 0; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="home.html">‹ 返回</a>
+  <span class="title">申报记录</span>
+</div>
+<div class="content" id="list"></div>
+<script src="tax-core.js"></script>
+<script>
+(function () {
+  var box = document.getElementById('list');
+  var years = TaxCore.listYears();
+  if (!years.length) {
+    box.innerHTML = '<div class="empty">暂无申报记录<br><a href="editor.html" style="color:#1e6fff">去数据管理生成 ›</a></div>';
+    return;
+  }
+  var html = '';
+  years.forEach(function (y) {
+    var d = TaxCore.getYear(y);
+    var months = (d && d.months) || [];
+    var income = 0, tax = 0;
+    months.forEach(function (m) { income += Number(m.income) || 0; tax += Number(m.tax_reported) || 0; });
+    var last = months.length ? months[months.length - 1] : null;
+    html += '<div class="rec-item">' +
+      '<div class="rec-head"><b>' + y + ' 年度综合所得</b><span class="rec-status">已申报</span></div>' +
+      '<div class="rec-row"><span>申报月份</span><span>' + (months.length ? '1 月 ~ ' + months.length + ' 月（' + months.length + ' 期）' : '—') + '</span></div>' +
+      '<div class="rec-row"><span>收入合计</span><span>' + TaxCore.fmt2(income) + ' 元</span></div>' +
+      '<div class="rec-row"><span>已申报税额合计</span><span>' + TaxCore.fmt2(tax) + ' 元</span></div>' +
+      (last ? '<div class="rec-row"><span>最近申报日期</span><span>' + (last.report_date || '—') + '</span></div>' : '') +
+      '</div>';
+  });
+  box.innerHTML = html;
+})();
+</script>
+</body>
+</html>

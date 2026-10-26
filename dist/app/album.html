@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>记录相册 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:40px; }
+.content { padding:14px; }
+.alb-item { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:10px; box-shadow:0 1px 6px #0000000a; }
+.alb-item b { font-size:15px; }
+.alb-item .meta { font-size:13px; color:#666; margin-top:6px; line-height:1.9; }
+.alb-actions { margin-top:10px; }
+.alb-actions button { border:1px solid #1e6fff; background:#fff; color:#1e6fff; border-radius:16px; padding:6px 18px; font-size:13px; }
+.empty { text-align:center; color:#999; font-size:14px; padding:50px 0; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="home.html">‹ 返回</a>
+  <span class="title">记录相册</span>
+</div>
+<div class="content" id="list"></div>
+<script src="tax-core.js"></script>
+<script>
+(function () {
+  var box = document.getElementById('list');
+  var album = TaxCore.listAlbum();
+  if (!album.length) {
+    box.innerHTML = '<div class="empty">相册为空<br>到「纳税记录开具」生成并保存记录图片后，会出现在这里</div>';
+    return;
+  }
+  var html = '';
+  album.forEach(function (it) {
+    var d = new Date(it.saved_at);
+    html += '<div class="alb-item"><b>纳税记录 ' + esc(it.record_no) + '</b>' +
+      '<div class="meta">税款时期：' + esc(it.period) + '<br>保存时间：' + d.toLocaleString('zh-CN') + '（' + it.pages + ' 页）</div>' +
+      '<div class="alb-actions"><button onclick="location.href=\'preview.html?id=' + esc(it.id) + '&save=1\'">重新保存图片</button></div>' +
+      '</div>';
+  });
+  box.innerHTML = html;
+  function esc(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+})();
+</script>
+</body>
+</html>

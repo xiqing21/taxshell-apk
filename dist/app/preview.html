@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>纳税记录预览 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#e9edf2; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:5; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:60px; }
+.preview-wrap { padding:16px 12px 120px; }
+.preview-img-wrap { margin-bottom:14px; box-shadow:0 3px 16px #00000026; border-radius:4px; overflow:hidden; background:#fff; }
+.preview-img-wrap canvas { display:block; width:100%; height:auto; }
+.pager { text-align:center; color:#666; font-size:13px; padding:6px 0 12px; }
+.footer { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+.footer button { flex:1; height:44px; border-radius:22px; font-size:15px; border:1px solid #d0d7e2; background:#fff; color:#333; }
+.footer button.primary { background:#1e6fff; border-color:#1e6fff; color:#fff; font-weight:500; }
+.toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); background:#000000d9; color:#fff; padding:10px 22px; border-radius:8px; font-size:14px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="najilu.html">‹ 返回</a>
+  <span class="title">纳税记录预览</span>
+</div>
+<div class="preview-wrap" id="wrap"></div>
+<div class="pager" id="pager"></div>
+<div class="footer">
+  <button onclick="saveAll()" class="primary">保存到相册</button>
+  <button onclick="location.href='najilu.html'">关闭</button>
+</div>
+<div class="toast" id="toast"></div>
+<script src="tax-core.js"></script>
+<script src="qrcode.min.js"></script>
+<script>
+(function () {
+  function qs(k) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  var issue = TaxCore.getIssue(qs('id'));
+  if (!issue) { document.getElementById('wrap').innerHTML = '<div style="text-align:center;color:#999;padding:60px 0">记录不存在</div>'; return; }
+
+  var prof = TaxCore.getProfile();
+  var yearData = TaxCore.getYear(issue.year);
+  var months = (yearData && yearData.months || []).filter(function (m) {
+    var ym = issue.year + '-' + TaxCore.pad2(m.month);
+    return ym >= issue.period_start && ym <= issue.period_end;
+  });
+
+  /* 收入与税额合计 */
+  var totalIncome = 0, totalTax = 0;
+  months.forEach(function (m) { totalIncome += Number(m.income) || 0; totalTax += Number(m.tax_reported) || 0; });
+
+  /* ============ 官方版式 Canvas 绘制 ============ */
+  var W = 1080;                 // 画布宽（高清）
+  var PAD = 70;
+  var scale = 2;                // 文字基准（内部坐标）
+
+  function wrapText(ctx, text, maxWidth) {
+    var lines = [];
+    var line = '';
+    for (var i = 0; i < text.length; i++) {
+      if (ctx.measureText(line + text[i]).width > maxWidth) { lines.push(line); line = text[i]; }
+      else line += text[i];
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawRecord(canvas, pageMonths, pageIndex, pageTotal) {
+    var ctx = canvas.getContext('2d');
+    var rows = pageMonths.length;
+    // 每页高度动态：头部 ~ 560 + 表头 90 + 行*86 + 底部 ~ 420
+    var H = 560 + 90 + rows * 86 + 470;
+    canvas.width = W; canvas.height = H;
+    var g = ctx;
+
+    /* 背景 */
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, W, H);
+
+    /* 水印（斜排文字） */
+    g.save();
+    g.globalAlpha = 0.045;
+    g.fillStyle = '#1e6fff';
+    g.font = 'bold 34px sans-serif';
+    g.translate(W / 2, H / 2);
+    g.rotate(-Math.PI / 7);
+    for (var wy = -H; wy < H; wy += 130) {
+      for (var wx = -W; wx < W; wx += 420) {
+        g.fillText('个人所得税', wx + (wy / 130 % 2) * 200, wy);
+      }
+    }
+    g.restore();
+
+    /* 顶部国徽区（简绘）+ 标题 */
+    var y = 64;
+    g.fillStyle = '#d03a2b';
+    g.beginPath();
+    g.arc(W / 2, y + 46, 44, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#ffd700';
+    g.font = 'bold 40px serif';
+    g.textAlign = 'center';
+    g.fillText('★', W / 2, y + 60);
+    g.fillStyle = '#222';
+    g.font = 'bold 52px "PingFang SC","Microsoft YaHei",sans-serif';
+    g.fillText('个人所得税纳税记录', W / 2, y + 158);
+    g.fillStyle = '#666';
+    g.font = '24px sans-serif';
+    g.fillText('Individual Income Tax Record', W / 2, y + 196);
+
+    /* 编号行 */
+    y = 300;
+    g.textAlign = 'left';
+    g.font = '26px sans-serif';
+    g.fillStyle = '#444';
+    g.fillText('记录编号：' + issue.record_no, PAD, y);
+    g.fillText('生成时间：' + issue.apply_time, PAD, y + 42);
+
+    /* 纳税人信息 */
+    y += 100;
+    g.font = '28px sans-serif';
+    g.fillStyle = '#222';
+    g.fillText('纳税人名称：' + (prof.name || ''), PAD, y);
+    g.fillText('证件类型：' + (prof.idType || '居民身份证'), PAD, y + 44);
+    g.fillText('证件号码：' + maskId(prof.idNumber), PAD, y + 88);
+    g.fillText('税款时期：' + issue.period_start + ' 至 ' + issue.period_end, PAD, y + 132);
+
+    /* 分隔线 */
+    y += 170;
+    g.strokeStyle = '#e3e6ec';
+    g.lineWidth = 2;
+    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
+
+    /* 表格 */
+    y += 34;
+    g.fillStyle = '#333';
+    g.font = 'bold 28px sans-serif';
+    g.fillText('申报纳税信息', PAD, y);
+    y += 26;
+    /* 表头 */
+    var colX = [PAD, PAD + 200, PAD + 560, PAD + 760];
+    g.fillStyle = '#f5f7fa';
+    g.fillRect(PAD, y, W - PAD * 2, 64);
+    g.fillStyle = '#555';
+    g.font = '26px sans-serif';
+    g.fillText('所属期', colX[0] + 8, y + 42);
+    g.fillText('收入(元)', colX[1], y + 42);
+    g.fillText('实缴(元)', colX[2], y + 42);
+    g.fillText('税目', colX[3], y + 42);
+    y += 64;
+    /* 行 */
+    g.font = '26px sans-serif';
+    pageMonths.forEach(function (m, i) {
+      if (i % 2 === 1) { g.fillStyle = '#fafbfc'; g.fillRect(PAD, y, W - PAD * 2, 86); }
+      g.fillStyle = '#333';
+      var ym = issue.year + '-' + TaxCore.pad2(m.month);
+      g.fillText(ym, colX[0] + 8, y + 56);
+      g.fillText(fmt(m.income), colX[1], y + 56);
+      g.fillText(fmt(m.tax_reported), colX[2], y + 56);
+      g.fillText((m.income_type || '工资薪金').substring(0, 4), colX[3], y + 56);
+      g.strokeStyle = '#f0f0f2';
+      g.beginPath(); g.moveTo(PAD, y + 86); g.lineTo(W - PAD, y + 86); g.stroke();
+      y += 86;
+    });
+    /* 合计行 */
+    g.fillStyle = '#f0f5ff';
+    g.fillRect(PAD, y, W - PAD * 2, 76);
+    g.fillStyle = '#1e6fff';
+    g.font = 'bold 28px sans-serif';
+    g.fillText('合计', colX[0] + 8, y + 50);
+    g.fillText(fmt(totalIncome), colX[1], y + 50);
+    g.fillText(fmt(totalTax), colX[2], y + 50);
+    y += 76;
+
+    /* 合计说明 */
+    y += 40;
+    g.fillStyle = '#555';
+    g.font = '26px sans-serif';
+    g.fillText('收入合计：' + fmt(totalIncome) + ' 元', PAD, y);
+    g.fillText('已申报税额合计：' + fmt(totalTax) + ' 元', PAD + 420, y);
+
+    /* 二维码（右下） */
+    y += 70;
+    var qrSize = 190;
+    var qrText = 'https://www.chsi.com.cn/xlcx/bg.do?vcode=' + issue.record_no + '&srcid=bgcx';
+    try {
+      var qr = qrcode(0, 'M');
+      qr.addData(qrText);
+      qr.make();
+      var qrCanvas = document.createElement('canvas');
+      drawQR(qr, qrCanvas, qrSize);
+      g.drawImage(qrCanvas, PAD, y, qrSize, qrSize);
+    } catch (e) {}
+    g.fillStyle = '#555';
+    g.font = '24px sans-serif';
+    g.textAlign = 'left';
+    g.fillText('扫描二维码验证记录', PAD + 4, y + qrSize + 34);
+
+    /* 红章（右中） */
+    var sx = W - PAD - 190, sy = y + 40;
+    g.save();
+    g.globalAlpha = 0.85;
+    g.strokeStyle = '#d03a2b';
+    g.fillStyle = '#d03a2b';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(sx + 95, sy + 95, 95, 0, Math.PI * 2);
+    g.stroke();
+    g.font = 'bold 26px sans-serif';
+    g.textAlign = 'center';
+    var starY = sy + 62;
+    g.fillStyle = '#d03a2b';
+    g.fillText('★', sx + 95, starY + 24);
+    g.font = 'bold 22px sans-serif';
+    g.fillText('国家税务总局', sx + 95, starY + 66);
+    g.fillText('个人所得税', sx + 95, starY + 98);
+    g.font = '20px sans-serif';
+    g.fillText(issue.record_no.substring(0, 4), sx + 95, sy + 165);
+    g.restore();
+
+    /* 底部说明 + 落款 */
+    var footY = H - 150;
+    g.textAlign = 'center';
+    g.fillStyle = '#888';
+    g.font = '22px sans-serif';
+    var tips = [
+      '本记录为纳税人自行查询开具，验证码 ' + issue.record_no,
+      '第 ' + pageIndex + ' 页 / 共 ' + pageTotal + ' 页 · 开具范围：' + issue.scope
+    ];
+    tips.forEach(function (t, i) { g.fillText(t, W / 2, footY + i * 36); });
+    g.fillStyle = '#333';
+    g.font = '24px sans-serif';
+    g.fillText('国家税务总局', W / 2, H - 56);
+
+    function fmt(v) { return (Number(v) || 0).toFixed(2); }
+  }
+
+  function drawQR(qr, canvas, size) {
+    var n = qr.getModuleCount();
+    var cell = Math.floor(size / (n + 2));
+    var real = cell * (n + 2);
+    canvas.width = real; canvas.height = real;
+    var c = canvas.getContext('2d');
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, real, real);
+    c.fillStyle = '#000';
+    for (var r = 0; r < n; r++) {
+      for (var col = 0; col < n; col++) {
+        if (qr.isDark(r, col)) {
+          c.fillRect(cell + col * cell, cell + r * cell, cell, cell);
+        }
+      }
+    }
+  }
+
+  function maskId(id) {
+    id = String(id || '');
+    if (id.length < 8) return id;
+    return id.substring(0, 1) + '*'.repeat(Math.min(12, id.length - 2)) + id.substring(id.length - 1);
+  }
+
+  /* 分页：每页最多 14 个月 */
+  var PER_PAGE = 14;
+  var pages = [];
+  for (var i = 0; i < months.length; i += PER_PAGE) {
+    pages.push(months.slice(i, i + PER_PAGE));
+  }
+  if (!pages.length) pages.push([]);
+
+  var wrap = document.getElementById('wrap');
+  var canvases = [];
+  pages.forEach(function (pm, idx) {
+    var holder = document.createElement('div');
+    holder.className = 'preview-img-wrap';
+    var cv = document.createElement('canvas');
+    holder.appendChild(cv);
+    wrap.appendChild(holder);
+    drawRecord(cv, pm, idx + 1, pages.length);
+    canvases.push(cv);
+  });
+  var pager = document.getElementById('pager');
+  pager.textContent = pages.length > 1 ? ('共 ' + pages.length + ' 页，长按或点击保存') : '';
+
+  /* 保存 */
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+  function saveCanvas(cv, name) {
+    try {
+      var url = cv.toDataURL('image/png');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    } catch (e) { return false; }
+  }
+  window.saveAll = function () {
+    var ok = 0;
+    canvases.forEach(function (cv, i) {
+      var name = '个人所得税纳税记录' + (pages.length > 1 ? '_第' + (i + 1) + '页' : '') + '_' + issue.record_no + '.png';
+      if (saveCanvas(cv, name)) ok++;
+    });
+    // 存相册索引
+    TaxCore.addToAlbum({
+      id: issue.id,
+      record_no: issue.record_no,
+      period: issue.period_start + '~' + issue.period_end,
+      saved_at: Date.now(),
+      pages: pages.length
+    });
+    toast('已生成 ' + ok + ' 张图片，正在保存' + (pages.length > 1 ? '（多页请逐张确认）' : ''));
+  };
+  // 带 save=1 参数自动保存
+  if (qs('save') === '1') setTimeout(window.saveAll, 600);
+})();
+</script>
+</body>
+</html>

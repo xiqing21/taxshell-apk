@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1e6fff">
+<title>办&查 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.top { background:linear-gradient(160deg,#1e6fff,#4f90f3); padding:22px 16px 66px; color:#fff; position:relative; }
+.top .hi { font-size:16px; opacity:.92; }
+.top .name { font-size:22px; font-weight:600; margin-top:4px; }
+.top .idno { font-size:13px; opacity:.8; margin-top:3px; }
+.top .manage { position:absolute; right:16px; top:22px; color:#fff; font-size:13px; border:1px solid #ffffff88; border-radius:15px; padding:5px 14px; text-decoration:none; }
+.band { margin:-46px 14px 0; background:#fff; border-radius:14px; box-shadow:0 3px 12px #1e6fff14; padding:16px; }
+.band .row { display:flex; justify-content:space-between; padding:8px 0; }
+.band .cell b { display:block; font-size:20px; font-weight:600; color:#222; }
+.band .cell small { color:#999; font-size:12px; }
+.content { padding:16px 14px 90px; }
+.section-title { font-size:15px; font-weight:600; margin:6px 2px 12px; display:flex; align-items:center; gap:6px; }
+.section-title::before { content:''; width:4px; height:16px; background:#1e6fff; border-radius:2px; }
+.grid { background:#fff; border-radius:14px; padding:8px 4px; box-shadow:0 1px 6px #0000000a; display:grid; grid-template-columns:repeat(4,1fr); }
+.g-item { display:flex; flex-direction:column; align-items:center; padding:16px 4px; text-decoration:none; color:#222; }
+.g-item .ic { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:7px; }
+.g-item span { font-size:12px; color:#444; }
+.banner { margin-top:14px; background:linear-gradient(135deg,#fff7ec,#fff1f3); border-radius:14px; padding:14px 16px; font-size:13px; color:#8a5b2a; line-height:1.7; }
+.bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; display:flex; height:56px; padding-bottom:env(safe-area-inset-bottom); }
+.bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; color:#999; text-decoration:none; gap:2px; }
+.bottom-nav a.active { color:#1e6fff; font-weight:600; }
+.bottom-nav .ico { font-size:20px; line-height:1; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="hi">您好，</div>
+  <div class="name" id="uName">—</div>
+  <div class="idno" id="uId">—</div>
+  <a class="manage" href="editor.html">数据管理</a>
+</div>
+
+<div class="band">
+  <div class="row">
+    <div class="cell"><small>本年收入合计</small><b id="sumIncome">0.00 元</b></div>
+    <div class="cell" style="text-align:right"><small>已申报税额合计</small><b id="sumTax">0.00 元</b></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="section-title">常用服务</div>
+  <div class="grid">
+    <a class="g-item" href="shuiming.html"><div class="ic" style="background:#e8f1ff">💰</div><span>收入纳税明细</span></a>
+    <a class="g-item" href="najilu.html"><div class="ic" style="background:#e6f7f1">🧾</div><span>纳税记录开具</span></a>
+    <a class="g-item" href="jilu.html"><div class="ic" style="background:#fff4e5">📋</div><span>申报记录</span></a>
+    <a class="g-item" href="editor.html"><div class="ic" style="background:#f3ecff">✏️</div><span>数据管理</span></a>
+  </div>
+
+  <div class="section-title" style="margin-top:18px">查询服务</div>
+  <div class="grid">
+    <a class="g-item" href="shuiming.html"><div class="ic" style="background:#e8f1ff">📊</div><span>收入明细</span></a>
+    <a class="g-item" href="jilu.html"><div class="ic" style="background:#e6f7f1">🗓️</div><span>申报记录</span></a>
+    <a class="g-item" href="album.html"><div class="ic" style="background:#fff4e5">🖼️</div><span>记录相册</span></a>
+    <a class="g-item" href="editor.html"><div class="ic" style="background:#fdeef0">⚙️</div><span>扣除配置</span></a>
+  </div>
+
+  <div class="banner">
+    💡 本地版说明：所有数据保存在本机，无账号、无卡密、无服务器。<br>
+    到「数据管理」填写纳税人信息和月收入，一键生成全年纳税明细，再开具纳税记录并保存图片。
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <a href="home.html" class="active"><span class="ico">🏠</span>首页</a>
+  <a href="shuiming.html"><span class="ico">💰</span>明细</a>
+  <a href="najilu.html"><span class="ico">🧾</span>开具</a>
+  <a href="editor.html"><span class="ico">✏️</span>管理</a>
+</div>
+
+<script src="app/tax-core.js"></script>
+<script>
+(function () {
+  var p = TaxCore.getProfile();
+  document.getElementById('uName').textContent = p.name;
+  var idn = String(p.idNumber || '');
+  document.getElementById('uId').textContent = p.idType + '　' + (idn.length > 8 ? idn.substring(0,1) + '**************' + idn.slice(-2) : idn);
+  // 汇总当前年
+  var year = new Date().getFullYear();
+  var r = TaxCore.getRecords(year);
+  document.getElementById('sumIncome').textContent = r.income_total + ' 元';
+  document.getElementById('sumTax').textContent = r.tax_total + ' 元';
+})();
+</script>
+</body>
+</html>

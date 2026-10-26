@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>收入纳税明细详情 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:5; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:40px; }
+.content { padding:14px; }
+.hero { background:linear-gradient(160deg,#1e6fff,#4f90f3); border-radius:14px; color:#fff; padding:20px 18px; margin-bottom:14px; }
+.hero small { display:block; font-size:12px; opacity:.85; margin-bottom:6px; }
+.hero .amount { font-size:30px; font-weight:600; letter-spacing:-.5px; }
+.hero .amount i { font-style:normal; font-size:15px; font-weight:400; }
+.hero .sub { display:flex; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid #ffffff30; font-size:13px; }
+.hero .sub b { font-size:16px; font-weight:600; }
+.card { background:#fff; border-radius:14px; padding:4px 16px; margin-bottom:14px; box-shadow:0 1px 6px #0000000a; }
+.card h4 { font-size:14px; color:#999; font-weight:400; padding:12px 0 4px; }
+.row { display:flex; justify-content:space-between; align-items:center; min-height:46px; border-bottom:1px solid #f7f7f8; font-size:14px; }
+.row:last-child { border-bottom:0; }
+.row .k { color:#666; flex:none; }
+.row .v { text-align:right; color:#222; font-weight:500; margin-left:20px; word-break:break-all; }
+.row .v.money::before { content:''; }
+.load-err { text-align:center; color:#999; padding:50px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="javascript:history.back()">‹ 返回</a>
+  <span class="title">收入纳税明细详情</span>
+</div>
+<div class="content" id="content">
+  <div class="load-err" id="loadErr" style="display:none">记录不存在</div>
+  <div id="detailBody" style="display:none">
+    <div class="hero">
+      <small id="dPeriod">—</small>
+      <div class="amount"><span id="dIncome">0.00</span><i> 元</i></div>
+      <div class="sub">
+        <span>本期应纳税所得额</span>
+        <span>已申报税额 <b id="dTax">0.00 元</b></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>基础信息</h4>
+      <div class="row"><span class="k">所得项目</span><span class="v" id="dType">—</span></div>
+      <div class="row"><span class="k">所得项目小类</span><span class="v" id="dSubtype">—</span></div>
+      <div class="row"><span class="k">扣缴义务人</span><span class="v" id="dCompany">—</span></div>
+      <div class="row"><span class="k">统一社会信用代码</span><span class="v" id="dTaxId">—</span></div>
+      <div class="row"><span class="k">税务机关</span><span class="v" id="dAuthority">—</span></div>
+      <div class="row"><span class="k">申报渠道</span><span class="v" id="dChannel">—</span></div>
+      <div class="row"><span class="k">申报日期</span><span class="v" id="dReportDate">—</span></div>
+      <div class="row"><span class="k">税款所属期</span><span class="v" id="dTaxPeriod">—</span></div>
+    </div>
+
+    <div class="card">
+      <h4>收入及减除</h4>
+      <div class="row"><span class="k">本期收入</span><span class="v money" id="dIncomeThis">0.00</span></div>
+      <div class="row"><span class="k">免税收入</span><span class="v money" id="dTaxFree">0.00</span></div>
+      <div class="row"><span class="k">减除费用</span><span class="v money" id="dDeductionFee">0.00</span></div>
+      <div class="row"><span class="k">专项扣除合计</span><span class="v money" id="dSpecial">0.00</span></div>
+      <div class="row"><span class="k">其他扣除</span><span class="v money" id="dOther">0.00</span></div>
+      <div class="row"><span class="k">准予扣除的捐赠额</span><span class="v money" id="dDonation">0.00</span></div>
+    </div>
+
+    <div class="card">
+      <h4>专项扣除明细</h4>
+      <div class="row"><span class="k">基本养老保险</span><span class="v money" id="dPension">0.00</span></div>
+      <div class="row"><span class="k">基本医疗保险</span><span class="v money" id="dMedical">0.00</span></div>
+      <div class="row"><span class="k">失业保险</span><span class="v money" id="dUnemploy">0.00</span></div>
+      <div class="row"><span class="k">住房公积金</span><span class="v money" id="dFund">0.00</span></div>
+      <div class="row"><span class="k">企业年金</span><span class="v money" id="dAnnuity">0.00</span></div>
+      <div class="row"><span class="k">商业健康保险</span><span class="v money" id="dHealth">0.00</span></div>
+      <div class="row"><span class="k">税收递延型养老保险</span><span class="v money" id="dDefTax">0.00</span></div>
+      <div class="row"><span class="k">其他专项扣除</span><span class="v money" id="dOtherD">0.00</span></div>
+    </div>
+
+    <div class="card" id="salaryBottom">
+      <h4>税款计算</h4>
+      <div class="row"><span class="k">本期应纳税所得额</span><span class="v money" id="dTaxable">0.00</span></div>
+      <div class="row"><span class="k">税率</span><span class="v" id="dRate">—</span></div>
+      <div class="row"><span class="k">速算扣除数</span><span class="v money" id="dQuick">0.00</span></div>
+      <div class="row"><span class="k">累计应纳税额</span><span class="v money" id="dCumTax">0.00</span></div>
+      <div class="row"><span class="k">减免税额</span><span class="v money" id="dRelief">0.00</span></div>
+      <div class="row"><span class="k">已缴税额</span><span class="v money" id="dPaid">0.00</span></div>
+      <div class="row"><span class="k">本期应缴税额</span><span class="v money" id="dPayable">0.00</span></div>
+    </div>
+  </div>
+</div>
+<script src="tax-core.js"></script>
+<script>
+(function () {
+  function qs(k) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  var year = parseInt(qs('year')), month = parseInt(qs('month'));
+  var d = (!isNaN(year) && !isNaN(month)) ? TaxCore.getDetail(year, month) : null;
+  if (!d) { document.getElementById('loadErr').style.display = 'block'; return; }
+  document.getElementById('detailBody').style.display = 'block';
+  function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v == null || v === '' ? '—' : v; }
+  function yuan(id, v) { set(id, (Number(v) || 0).toFixed(2)); }
+
+  var mm = d.month < 10 ? '0' + d.month : d.month;
+  set('dPeriod', year + ' 年 ' + Number(d.month) + ' 月 · ' + (d.income_type || '工资薪金'));
+  yuan('dIncome', d.income);
+  yuan('dTax', d.tax_reported);
+  set('dType', d.income_type);
+  set('dSubtype', d.income_subtype || '正常工资薪金');
+  set('dCompany', d.company_name);
+  set('dTaxId', d.company_tax_id);
+  set('dAuthority', d.tax_authority || '国家税务总局');
+  set('dChannel', d.report_channel || '扣缴义务人代扣代缴');
+  set('dReportDate', d.report_date);
+  set('dTaxPeriod', d.tax_period);
+  yuan('dIncomeThis', d.income_this_period != null ? d.income_this_period : d.income);
+  yuan('dTaxFree', d.tax_free_income);
+  yuan('dDeductionFee', d.deduction_fee);
+  yuan('dSpecial', d.special_deduction);
+  yuan('dOther', d.other_deduction);
+  yuan('dDonation', d.donation_deduction);
+  yuan('dPension', d.pension_insurance);
+  yuan('dMedical', d.medical_insurance);
+  yuan('dUnemploy', d.unemployment_insurance);
+  yuan('dFund', d.housing_fund);
+  yuan('dAnnuity', d.enterprise_annuity);
+  yuan('dHealth', d.commercial_health);
+  yuan('dDefTax', d.tax_deferred_pension);
+  yuan('dOtherD', d.other_deduction_other);
+
+  // 本期应纳税所得额 = 收入 - 免税 - 减除费用 - 专项扣除 - 其他扣除 - 捐赠
+  var taxable = (Number(d.income) || 0) - (Number(d.tax_free_income) || 0) -
+    (Number(d.deduction_fee) || 0) - (Number(d.special_deduction) || 0) -
+    (Number(d.other_deduction) || 0) - (Number(d.donation_deduction) || 0);
+  if (taxable < 0) taxable = 0;
+  yuan('dTaxable', taxable);
+  // 查税率表（按月折算展示简化：直接用年度表对本期应纳税所得额说明）
+  var b = TaxCore.BRACKETS[0];
+  for (var i = 0; i < TaxCore.BRACKETS.length; i++) {
+    if (taxable * 12 <= TaxCore.BRACKETS[i].limit) { b = TaxCore.BRACKETS[i]; break; }
+    b = TaxCore.BRACKETS[i];
+  }
+  set('dRate', Math.round(b.rate * 100) + '%');
+  yuan('dQuick', b.quick);
+  var cumTaxable = taxable * (d.month || 1);
+  var bb = TaxCore.BRACKETS[0];
+  for (var j = 0; j < TaxCore.BRACKETS.length; j++) {
+    if (cumTaxable <= TaxCore.BRACKETS[j].limit) { bb = TaxCore.BRACKETS[j]; break; }
+    bb = TaxCore.BRACKETS[j];
+  }
+  var cumTax = Math.max(0, cumTaxable * bb.rate - bb.quick);
+  yuan('dCumTax', cumTax.toFixed(2));
+  yuan('dRelief', '0.00');
+  yuan('dPaid', d.tax_reported);
+  yuan('dPayable', d.tax_reported);
+})();
+</script>
+</body>
+</html>

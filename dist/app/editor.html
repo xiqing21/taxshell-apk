@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>数据管理 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.header { position:sticky; top:0; z-index:10; background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; display:flex; align-items:center; gap:2px; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:44px; }
+.content { padding:14px 14px 90px; }
+.card { background:#fff; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 1px 6px #0000000a; }
+.card h3 { font-size:15px; margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+.card h3::before { content:''; width:4px; height:16px; background:#1e6fff; border-radius:2px; }
+.field { display:flex; align-items:center; min-height:46px; border-bottom:1px solid #f5f5f5; }
+.field:last-child { border-bottom:0; }
+.field label { width:96px; font-size:14px; color:#666; flex:none; }
+.field input, .field select { flex:1; border:0; outline:0; font-size:15px; text-align:right; background:transparent; color:#222; min-width:0; }
+.field .unit { color:#999; font-size:13px; margin-left:4px; }
+.btn-primary { display:block; width:100%; height:46px; border:0; border-radius:23px; background:#1e6fff; color:#fff; font-size:16px; font-weight:500; margin-top:16px; }
+.btn-primary:active { opacity:.85; }
+.btn-ghost { display:block; width:100%; height:42px; border:1px solid #d0d7e2; border-radius:21px; background:#fff; color:#555; font-size:14px; margin-top:10px; }
+.year-item { display:flex; align-items:center; justify-content:space-between; padding:13px 4px; border-bottom:1px solid #f5f5f5; }
+.year-item:last-child { border-bottom:0; }
+.year-item .y-info b { font-size:16px; }
+.year-item .y-info small { display:block; color:#999; font-size:12px; margin-top:2px; }
+.year-item .y-actions { display:flex; gap:8px; }
+.year-item .y-actions button { border:1px solid #d0d7e2; background:#fff; border-radius:14px; padding:5px 14px; font-size:13px; color:#555; }
+.year-item .y-actions button.del { color:#e5484d; border-color:#f2c1c4; }
+.gen-row { display:flex; gap:10px; }
+.gen-row .field { flex:1; border:1px solid #e3e6ec; border-radius:10px; padding:0 10px; min-height:44px; }
+.tip { color:#999; font-size:12px; line-height:1.6; margin-top:8px; }
+.empty { text-align:center; color:#999; font-size:14px; padding:30px 0; }
+section-title { display:block; }
+.sep { height:10px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="home.html">‹ 返回</a>
+  <span class="title">数据管理</span>
+</div>
+<div class="content">
+
+  <div class="card">
+    <h3>纳税人信息</h3>
+    <div class="field"><label>姓名</label><input id="pName" placeholder="纳税人姓名"></div>
+    <div class="field"><label>证件类型</label>
+      <select id="pIdType"><option>居民身份证</option><option>港澳居民来往内地通行证</option><option>台湾居民来往大陆通行证</option><option>护照</option><option>外国人永久居留身份证</option></select>
+    </div>
+    <div class="field"><label>证件号码</label><input id="pIdNumber" placeholder="证件号码"></div>
+    <div class="field"><label>手机号码</label><input id="pPhone" placeholder="手机号码"></div>
+    <button class="btn-primary" onclick="saveProfile()">保存纳税人信息</button>
+  </div>
+
+  <div class="card">
+    <h3>扣除配置（自动算税用）</h3>
+    <div class="field"><label>社保基数</label><input id="cBase" type="number" placeholder="0=按工资"><span class="unit">元</span></div>
+    <div class="field"><label>养老 %</label><input id="cPension" type="number" step="0.1"><span class="unit">%</span></div>
+    <div class="field"><label>医疗 %</label><input id="cMedical" type="number" step="0.1"><span class="unit">%</span></div>
+    <div class="field"><label>失业 %</label><input id="cUnemploy" type="number" step="0.1"><span class="unit">%</span></div>
+    <div class="field"><label>公积金 %</label><input id="cFund" type="number" step="0.1"><span class="unit">%</span></div>
+    <div class="field"><label>子女教育</label><input id="cChildren" type="number"><span class="unit">元/月</span></div>
+    <div class="field"><label>房贷利息</label><input id="cLoan" type="number"><span class="unit">元/月</span></div>
+    <div class="field"><label>住房租金</label><input id="cRent" type="number"><span class="unit">元/月</span></div>
+    <div class="field"><label>赡养老人</label><input id="cElderly" type="number"><span class="unit">元/月</span></div>
+    <div class="field"><label>继续教育</label><input id="cEdu" type="number"><span class="unit">元/月</span></div>
+    <div class="field"><label>婴幼儿照护</label><input id="cBaby" type="number"><span class="unit">元/月</span></div>
+    <button class="btn-primary" onclick="saveConfig()">保存扣除配置</button>
+    <div class="tip">累计预扣法自动计税：收入 − 5000×月数 − 五险一金 − 专项附加扣除，按 7 级超额累进税率计算。</div>
+  </div>
+
+  <div class="card">
+    <h3>一键生成年收入数据</h3>
+    <div class="gen-row">
+      <div class="field"><label style="width:auto">年度</label><input id="gYear" type="number" placeholder="2026"></div>
+      <div class="field"><label style="width:auto">月工资</label><input id="gSalary" type="number" placeholder="15000"><span class="unit">元</span></div>
+    </div>
+    <div class="gen-row" style="margin-top:10px">
+      <div class="field"><label style="width:auto">月份数</label><input id="gMonths" type="number" placeholder="12"></div>
+      <div class="field"><label style="width:auto">单位名称</label><input id="gCompany" placeholder="任职单位"></div>
+    </div>
+    <button class="btn-primary" onclick="generate()">生成 / 覆盖该年度数据</button>
+    <div class="tip">将按月生成工资薪金记录，并自动计算每月应缴税额（累计预扣法）。已存在同年度数据会被覆盖。</div>
+  </div>
+
+  <div class="card">
+    <h3>已有年度数据</h3>
+    <div id="yearList"></div>
+  </div>
+
+</div>
+<script src="tax-core.js"></script>
+<script>
+function loadProfile() {
+  var p = TaxCore.getProfile();
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pIdType').value = p.idType;
+  document.getElementById('pIdNumber').value = p.idNumber;
+  document.getElementById('pPhone').value = p.phone || '';
+}
+function saveProfile() {
+  TaxCore.setProfile({
+    name: document.getElementById('pName').value.trim() || '张三',
+    idType: document.getElementById('pIdType').value,
+    idNumber: document.getElementById('pIdNumber').value.trim(),
+    phone: document.getElementById('pPhone').value.trim()
+  });
+  alert('已保存纳税人信息');
+}
+function loadConfig() {
+  var c = TaxCore.getConfig();
+  document.getElementById('cBase').value = c.socialBase || '';
+  document.getElementById('cPension').value = c.pensionRate;
+  document.getElementById('cMedical').value = c.medicalRate;
+  document.getElementById('cUnemploy').value = c.unemploymentRate;
+  document.getElementById('cFund').value = c.housingFundRate;
+  document.getElementById('cChildren').value = c.childrenEdu || '';
+  document.getElementById('cLoan').value = c.housingLoan || '';
+  document.getElementById('cRent').value = c.housingRent || '';
+  document.getElementById('cElderly').value = c.elderly || '';
+  document.getElementById('cEdu').value = c.continuingEdu || '';
+  document.getElementById('cBaby').value = c.babyCare || '';
+}
+function num(id, def) {
+  var v = parseFloat(document.getElementById(id).value);
+  return isNaN(v) ? (def || 0) : v;
+}
+function saveConfig() {
+  TaxCore.setConfig({
+    socialBase: num('cBase', 0),
+    pensionRate: num('cPension', 8),
+    medicalRate: num('cMedical', 2),
+    unemploymentRate: num('cUnemploy', 0.5),
+    housingFundRate: num('cFund', 12),
+    childrenEdu: num('cChildren', 0),
+    housingLoan: num('cLoan', 0),
+    housingRent: num('cRent', 0),
+    elderly: num('cElderly', 0),
+    continuingEdu: num('cEdu', 0),
+    babyCare: num('cBaby', 0)
+  });
+  // 配置变了，所有年度重算
+  TaxCore.listYears().forEach(function (y) { TaxCore.recomputeYear(y); });
+  renderYears();
+  alert('已保存扣除配置，历史数据已按新配置重算税额');
+}
+function generate() {
+  var year = parseInt(document.getElementById('gYear').value) || new Date().getFullYear();
+  var salary = parseFloat(document.getElementById('gSalary').value);
+  if (isNaN(salary) || salary <= 0) { alert('请填写有效的月工资'); return; }
+  var months = parseInt(document.getElementById('gMonths').value) || 12;
+  if (months < 1) months = 1; if (months > 12) months = 12;
+  var company = document.getElementById('gCompany').value.trim();
+  var data = TaxCore.generateYear(year, salary, months, company);
+  TaxCore.setYear(year, data);
+  renderYears();
+  alert(year + ' 年数据已生成（' + months + ' 个月，税额自动计算）');
+}
+function renderYears() {
+  var box = document.getElementById('yearList');
+  var years = TaxCore.listYears();
+  if (!years.length) { box.innerHTML = '<div class="empty">暂无数据，先用上方「一键生成」创建</div>'; return; }
+  var html = '';
+  years.forEach(function (y) {
+    var d = TaxCore.getYear(y);
+    var n = (d && d.months ? d.months.length : 0);
+    var income = 0, tax = 0;
+    (d && d.months || []).forEach(function (m) { income += Number(m.income) || 0; tax += Number(m.tax_reported) || 0; });
+    html += '<div class="year-item"><div class="y-info"><b>' + y + ' 年</b>' +
+      '<small>' + n + ' 个月 · 收入 ' + TaxCore.fmt2(income) + ' 元 · 税额 ' + TaxCore.fmt2(tax) + ' 元</small></div>' +
+      '<div class="y-actions"><button onclick="recalc(' + y + ')">重算</button>' +
+      '<button class="del" onclick="delYear(' + y + ')">删除</button></div></div>';
+  });
+  box.innerHTML = html;
+}
+function recalc(y) { TaxCore.recomputeYear(y); renderYears(); }
+function delYear(y) {
+  if (!confirm('确定删除 ' + y + ' 年全部数据？')) return;
+  TaxCore.removeYear(y); renderYears();
+}
+loadProfile();
+loadConfig();
+renderYears();
+</script>
+</body>
+</html>

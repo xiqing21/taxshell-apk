@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>收入纳税明细 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f5f6fa; color:#222; }
+.page-root { padding-bottom:30px; }
+.summary { background:linear-gradient(160deg,#1e6fff,#4f90f3); color:#fff; padding:20px 16px 24px; }
+.summary .back { color:#fff; text-decoration:none; font-size:15px; display:inline-flex; align-items:center; gap:2px; margin-bottom:12px; }
+.summary h2 { font-size:17px; font-weight:600; margin-bottom:16px; }
+.summary .srow { display:flex; }
+.summary .scell { flex:1; }
+.summary .scell small { display:block; font-size:12px; opacity:.85; margin-bottom:5px; }
+.summary .scell b { font-size:22px; font-weight:600; letter-spacing:-.3px; }
+.summary .scell b i { font-style:normal; font-size:14px; font-weight:400; margin-left:2px; }
+.summary .year-tag { display:inline-block; background:#ffffff2b; border-radius:14px; padding:4px 12px; font-size:12px; margin-top:14px; }
+.list-wrap { padding:12px 12px 0; }
+.list-item { display:block; background:#fff; border-radius:12px; padding:14px 14px 12px; margin-bottom:10px; box-shadow:0 1px 6px #0000000a; text-decoration:none; color:#222; }
+.list-item:active { background:#fafbfc; }
+.list-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.list-title { font-size:15px; font-weight:600; }
+.list-date { font-size:13px; color:#999; }
+.list-row { font-size:13px; color:#666; line-height:1.9; }
+.list-row .list-amount { color:#222; font-weight:500; }
+.list-row-tax .list-amount { color:#e5484d; }
+.list-row-with-arrow { position:relative; }
+.list-company-name { color:#222; }
+.list-arrow { position:absolute; right:2px; top:50%; width:8px; height:8px; border-top:2px solid #c8c8c8; border-right:2px solid #c8c8c8; transform:translateY(-50%) rotate(45deg); }
+.list-empty { text-align:center; color:#999; font-size:14px; padding:50px 0; }
+.footer-note { text-align:center; color:#bbb; font-size:11px; padding:20px 0 10px; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="page-root">
+  <div class="summary">
+    <a class="back" href="shuiming.html">‹ 返回</a>
+    <h2>收入纳税明细</h2>
+    <div class="srow">
+      <div class="scell"><small>收入合计</small><b id="incomeTotal">0.00<i>元</i></b></div>
+      <div class="scell" style="text-align:right"><small>已申报税额合计</small><b id="taxTotal">0.00<i>元</i></b></div>
+    </div>
+    <span class="year-tag" id="yearTag">—</span>
+  </div>
+  <div class="list-wrap" id="recordList"></div>
+  <div class="footer-note">数据仅保存在本机 · 长按明细可查看详情</div>
+</div>
+<script src="tax-core.js"></script>
+<script>
+(function () {
+  function qs(k) {
+    var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  var year = parseInt(qs('year')) || new Date().getFullYear();
+  var types = qs('types') ? qs('types').split(',') : null;
+  document.getElementById('yearTag').textContent = year + ' 年' + (types && types.length ? ' · ' + types.join('、') : '');
+  var data = TaxCore.getRecords(year, types);
+  document.getElementById('incomeTotal').innerHTML = data.income_total + '<i>元</i>';
+  document.getElementById('taxTotal').innerHTML = data.tax_total + '<i>元</i>';
+  var box = document.getElementById('recordList');
+  if (!data.records.length) {
+    box.innerHTML = '<div class="list-empty">该年度暂无符合条件的记录<br><br><a href="editor.html" style="color:#1e6fff">去数据管理生成 ›</a></div>';
+    return;
+  }
+  var html = '';
+  data.records.slice().sort(function (a, b) { return b.month - a.month; }).forEach(function (m) {
+    var mm = m.month < 10 ? '0' + m.month : m.month;
+    html += '<a class="list-item" href="xiangqing.html?year=' + year + '&month=' + m.month + '">' +
+      '<div class="list-header"><span class="list-title">' + esc(m.income_type) + '</span>' +
+      '<span class="list-date">' + year + '-' + mm + '</span></div>' +
+      '<div class="list-row">所得项目小类：' + esc(m.income_subtype || '正常工资薪金') + '</div>' +
+      '<div class="list-row-with-arrow"><div class="list-row list-row-company">扣缴义务人：<span class="list-company-name">' + esc(m.company_name) + '</span></div>' +
+      '<div class="list-row">收入：<span class="list-amount">' + esc(m.income) + '</span> 元</div><span class="list-arrow"></span></div>' +
+      '<div class="list-row list-row-tax">已申报税额：<span class="list-amount">' + esc(m.tax_reported) + '</span> 元</div>' +
+      '</a>';
+  });
+  box.innerHTML = html;
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+})();
+</script>
+</body>
+</html>
