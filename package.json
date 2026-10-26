@@ -1,0 +1,8 @@
+{
+  "name": "taxshell",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri"
+  }
+}
