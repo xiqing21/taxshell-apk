@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>离职证明 · 个人所得税</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#e9edf2; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:5; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:60px; }
+.preview-wrap { padding:16px 12px 120px; }
+.preview-img-wrap { margin-bottom:14px; box-shadow:0 3px 16px #00000026; border-radius:4px; overflow:hidden; background:#fff; }
+.preview-img-wrap canvas { display:block; width:100%; height:auto; }
+.footer { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+.footer button { flex:1; height:44px; border-radius:22px; font-size:15px; border:1px solid #d0d7e2; background:#fff; color:#333; }
+.footer button.primary { background:#1e6fff; border-color:#1e6fff; color:#fff; font-weight:500; }
+.toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); background:#000000d9; color:#fff; padding:10px 22px; border-radius:8px; font-size:14px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="editor-li.html">‹ 返回</a>
+  <span class="title">离职证明预览</span>
+</div>
+<div class="preview-wrap" id="wrap"></div>
+<div class="footer">
+  <button onclick="saveAll()" class="primary">保存到相册</button>
+  <button onclick="location.href='editor-li.html'">修改信息</button>
+</div>
+<div class="toast" id="toast"></div>
+<script src="tax-core.js"></script>
+<script>
+(function () {
+  var KEY = 'tax_li_data';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; }
+  }
+  var d = load();
+
+  var company   = d.company   || '示例科技有限公司';
+  var person    = d.person    || '张伟';
+  var idcard    = d.idcard    || '';
+  var position  = d.position  || '软件工程师';
+  var dept      = d.dept      || '技术部';
+  var workStart = d.workStart || '2021-03-01';
+  var workEnd   = d.workEnd   || '2026-09-30';
+  var reason    = d.reason    || '个人原因';
+  var sealName  = d.sealName  || company;
+
+  function fmt(cn) {
+    var p = cn.split('-');
+    return p[0] + '年' + Number(p[1]) + '月' + Number(p[2]) + '日';
+  }
+
+  var W = 1240, H = 1754;          // A4 @150dpi
+  var PAD = 110;
+
+  function draw() {
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var g = cv.getContext('2d');
+
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, W, H);
+
+    // 外边框（浅灰细线）
+    g.strokeStyle = '#d8dde3';
+    g.lineWidth = 2;
+    g.strokeRect(30, 30, W - 60, H - 60);
+
+    // 标题
+    g.fillStyle = '#111';
+    g.textAlign = 'center';
+    g.font = 'bold 56px "PingFang SC","Microsoft YaHei",sans-serif';
+    g.fillText('离 职 证 明', W / 2, 210);
+
+    // 正文
+    g.textAlign = 'left';
+    g.fillStyle = '#1a1a1a';
+    g.font = '30px "PingFang SC","Microsoft YaHei",sans-serif';
+
+    var y = 340;
+    var LH = 62;
+    function para(text) {
+      var maxW = W - PAD * 2;
+      var line = '';
+      for (var i = 0; i < text.length; i++) {
+        var test = line + text[i];
+        if (g.measureText(test).width > maxW && line) {
+          g.fillText(line, PAD, y);
+          y += LH;
+          line = text[i];
+        } else {
+          line = test;
+        }
+      }
+      if (line) { g.fillText(line, PAD, y); y += LH; }
+    }
+
+    var idPart = idcard ? ('（身份证号：' + idcard + '）') : '';
+    para('兹证明 ' + person + idPart + '自 ' + fmt(workStart) + ' 起至 '
+       + fmt(workEnd) + ' 止在我公司' + dept + '工作，担任' + position + '一职。');
+
+    y += 14;
+    para('因' + reason + '，双方劳动关系已于 ' + fmt(workEnd)
+       + ' 正式解除，并已办理完毕全部离职交接手续。');
+
+    y += 14;
+    para('在职期间，该员工工作认真负责，与同事相处融洽，遵守公司各项规章制度。我公司与其不存在任何劳动纠纷，亦不存在任何未结清的薪酬、奖金、社保及公积金等款项。');
+
+    y += 14;
+    para('本证明仅用于证明上述劳动关系解除事实，不作其他用途。');
+
+    y += 40;
+    para('特此证明。');
+
+    // 落款
+    var by = 1420;
+    g.textAlign = 'right';
+    g.font = '32px "PingFang SC","Microsoft YaHei",sans-serif';
+    g.fillStyle = '#1a1a1a';
+    g.fillText(company, W - PAD - 40, by);
+    g.fillText(fmt(workEnd), W - PAD - 40, by + 66);
+
+    // 公章（红色圆形）
+    var cx = W - PAD - 250, cy = by - 132, r = 104;
+    g.save();
+    g.globalAlpha = 0.86;
+    g.strokeStyle = '#d7261e';
+    g.lineWidth = 7;
+    g.beginPath();
+    g.arc(cx, cy, r, 0, Math.PI * 2);
+    g.stroke();
+
+    g.beginPath();
+    g.arc(cx, cy, r - 16, 0, Math.PI * 2);
+    g.lineWidth = 2;
+    g.stroke();
+
+    // 五角星
+    g.fillStyle = '#d7261e';
+    g.beginPath();
+    for (var i = 0; i < 5; i++) {
+      var a1 = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+      var a2 = a1 + Math.PI / 5;
+      g.lineTo(cx + Math.cos(a1) * 30, cy + Math.sin(a1) * 30);
+      g.lineTo(cx + Math.cos(a2) * 13, cy + Math.sin(a2) * 13);
+    }
+    g.closePath();
+    g.fill();
+
+    // 印章环绕文字
+    g.fillStyle = '#d7261e';
+    g.font = 'bold 26px "PingFang SC","Microsoft YaHei",sans-serif';
+    g.textAlign = 'center';
+    var txt = sealName;
+    var start = -Math.PI * 0.78;
+    var per = (Math.PI * 1.56) / Math.max(txt.length - 1, 1);
+    for (var k = 0; k < txt.length; k++) {
+      var ang = start + k * per;
+      g.save();
+      g.translate(cx + Math.cos(ang) * (r - 40), cy + Math.sin(ang) * (r - 40));
+      g.rotate(ang + Math.PI / 2);
+      g.fillText(txt[k], 0, 0);
+      g.restore();
+    }
+
+    g.restore();
+
+    // 页脚说明
+    g.textAlign = 'center';
+    g.fillStyle = '#9aa4b0';
+    g.font = '22px "PingFang SC",sans-serif';
+    g.fillText('本证明由 ' + company + ' 出具', W / 2, H - 120);
+
+    return cv;
+  }
+
+  var cv = draw();
+  var box = document.createElement('div');
+  box.className = 'preview-img-wrap';
+  box.appendChild(cv);
+  document.getElementById('wrap').appendChild(box);
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+
+  function saveCanvas(cv, name) {
+    try {
+      var url = cv.toDataURL('image/png');
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  window.saveAll = function () {
+    var name = '离职证明_' + person + '_' + workEnd + '.png';
+    var ok = saveCanvas(cv, name);
+    toast(ok ? '已生成图片，正在保存' : '保存失败');
+  };
+})();
+</script>
+</body>
+</html>

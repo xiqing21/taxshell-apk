@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>离职证明 · 填写信息</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { min-height:100%; font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:#f2f4f7; color:#222; }
+.header { background:#fff; display:flex; align-items:center; height:48px; padding:0 12px; border-bottom:1px solid #f0f0f0; position:sticky; top:0; z-index:5; }
+.header .back { color:#4285f4; font-size:15px; text-decoration:none; }
+.header .title { flex:1; text-align:center; font-size:17px; font-weight:600; margin-right:60px; }
+.wrap { padding:12px 12px 120px; }
+.card { background:#fff; border-radius:12px; margin-bottom:14px; overflow:hidden; }
+.row { display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid #f5f6f8; }
+.row:last-child { border-bottom:none; }
+.row label { width:110px; color:#555; font-size:15px; flex-shrink:0; }
+.row input, .row select { flex:1; border:none; outline:none; font-size:15px; color:#111; background:transparent; text-align:right; font-family:inherit; }
+.row input::placeholder { color:#bbb; }
+.tip { color:#8a94a2; font-size:13px; padding:10px 20px 0; line-height:1.6; }
+.footer { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #eee; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:12px; }
+.footer button { flex:1; height:46px; border-radius:23px; font-size:16px; border:none; font-family:inherit; }
+.footer button.primary { background:#1e6fff; color:#fff; font-weight:500; }
+.footer button.ghost { background:#f2f4f7; color:#333; }
+.toast { position:fixed; left:50%; bottom:120px; transform:translateX(-50%); background:#000000d9; color:#fff; padding:10px 22px; border-radius:8px; font-size:14px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="home.html">‹ 返回</a>
+  <span class="title">离职证明</span>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <div class="row"><label>公司名称</label><input id="company" placeholder="示例科技有限公司"></div>
+    <div class="row"><label>员工姓名</label><input id="person" placeholder="张伟"></div>
+    <div class="row"><label>身份证号</label><input id="idcard" placeholder="110101199001011234"></div>
+    <div class="row"><label>所属部门</label><input id="dept" placeholder="技术部"></div>
+    <div class="row"><label>职位</label><input id="position" placeholder="软件工程师"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><label>入职日期</label><input id="workStart" type="date"></div>
+    <div class="row"><label>离职日期</label><input id="workEnd" type="date"></div>
+    <div class="row"><label>离职原因</label><input id="reason" placeholder="个人原因"></div>
+  </div>
+
+  <div class="card">
+    <div class="row"><label>公章文字</label><input id="sealName" placeholder="留空则用公司名"></div>
+  </div>
+
+  <div class="tip">
+    全部信息只存在本机，不上传任何服务器。<br>
+    填完点“预览”，确认版式后保存到相册。
+  </div>
+</div>
+
+<div class="footer">
+  <button class="ghost" onclick="resetAll()">恢复默认</button>
+  <button class="primary" onclick="goPreview()">预览</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var KEY = 'tax_li_data';
+  var FIELDS = ['company','person','idcard','dept','position','workStart','workEnd','reason','sealName'];
+  var DEFAULTS = {
+    company: '示例科技有限公司',
+    person: '张伟',
+    idcard: '',
+    dept: '技术部',
+    position: '软件工程师',
+    workStart: '2021-03-01',
+    workEnd: '2026-09-30',
+    reason: '个人原因',
+    sealName: ''
+  };
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; }
+  }
+  function save(o) {
+    try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+  }
+  function toast(m) {
+    var t = document.getElementById('toast');
+    t.textContent = m; t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 1500);
+  }
+
+  var data = load();
+  FIELDS.forEach(function (k) {
+    var el = document.getElementById(k);
+    el.value = data[k] || DEFAULTS[k] || '';
+  });
+
+  window.goPreview = function () {
+    var o = {};
+    FIELDS.forEach(function (k) {
+      o[k] = document.getElementById(k).value.trim();
+    });
+    if (!o.person) { toast('请填写姓名'); return; }
+    if (!o.workStart || !o.workEnd) { toast('请选择起止日期'); return; }
+    if (o.workStart > o.workEnd) { toast('入职日期不能晚于离职日期'); return; }
+    if (!o.sealName) o.sealName = o.company;
+    save(o);
+    location.href = 'li-preview.html';
+  };
+
+  window.resetAll = function () {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    FIELDS.forEach(function (k) {
+      document.getElementById(k).value = DEFAULTS[k] || '';
+    });
+    toast('已恢复默认');
+  };
+})();
+</script>
+</body>
+</html>
