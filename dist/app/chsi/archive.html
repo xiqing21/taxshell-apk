@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>学信网 · 学籍查询</title>
+  <style>
+    body { font-family: system-ui; margin:0; background:#f8f9fa; }
+    .header { background:#006633; color:white; padding:16px; text-align:center; font-size:18px; }
+    .profile-card { background:white; margin:16px; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .section { margin:16px; background:white; border-radius:12px; padding:16px; }
+    .edu-card { background:#f8f9fa; margin:12px 0; border-radius:12px; padding:16px; border-left:5px solid #006633; cursor:pointer; }
+    .edu-card:active { background:#e8f5e9; }
+    .btn { display:block; width:100%; margin-top:12px; padding:12px; background:#006633; color:white; text-align:center; border-radius:8px; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="header">学信网 · 学籍查询</div>
+
+  <div id="profile"></div>
+
+  <!-- 高等教育信息 -->
+  <div class="section">
+    <h3 style="margin:0 0 12px 0; color:#006633;">高等教育信息</h3>
+    <div id="higher-edu-list"></div>
+  </div>
+
+  <div style="padding:16px;">
+    <a href="editor.html" class="btn">编辑我的学信数据（含证件号）</a>
+    <a href="bgcx.html" class="btn" style="background:#34a853; margin-top:8px;">在线验证查询</a>
+  </div>
+
+  <script src="chsi-core.js"></script>
+  <script>
+    function render() {
+      const p = CHSI.getProfile();
+      document.getElementById('profile').innerHTML = `
+        <div class="profile-card">
+          <img src="${p.avatar}" width="80" style="border-radius:50%;"><br>
+          <h2>${p.name}</h2>
+          <p>${p.gender} | <span onclick="editIdCard()" style="color:#0066cc;text-decoration:underline;cursor:pointer;">${p.idcard.replace(/(\d{6})\d{8}(\d{4})/,'$1********$2')}</span></p>
+          <small style="color:#666;">（点击证件号可直接修改）</small>
+        </div>`;
+
+      const list = CHSI.getEducations();
+      let html = '';
+      list.forEach(e => {
+        html += `<div class="edu-card" onclick="location.href='report.html?code=${e.vcode}'">
+          <strong>${e.type} - ${e.school}</strong><br>
+          ${e.major} (${e.level})<br>
+          <small>${e.start} ~ ${e.end} | 状态：${e.status}</small>
+          <div style="margin-top:8px; color:#0066cc; font-size:13px;">点击查看学籍信息卡片 →</div>
+        </div>`;
+      });
+      document.getElementById('higher-edu-list').innerHTML = html || '<p>暂无高等教育信息</p>';
+    }
+
+    function editIdCard() {
+      const p = CHSI.getProfile();
+      const newId = prompt('请输入新的证件号码（支持修改）', p.idcard);
+      if (newId && newId.length >= 15) {
+        p.idcard = newId;
+        CHSI.setProfile(p);
+        alert('证件号码已更新！');
+        location.reload();
+      } else if (newId) {
+        alert('证件号码格式不正确');
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

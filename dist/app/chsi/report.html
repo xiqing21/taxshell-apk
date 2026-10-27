@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>学信报告 - 模拟器</title>
+  <style>
+    body { font-family: system-ui; margin:0; background:#fff; }
+    .header { background:#006633; color:white; padding:12px; text-align:center; font-size:18px; }
+    .report { padding:20px; max-width:800px; margin:0 auto; }
+    table { width:100%; border-collapse:collapse; margin:16px 0; }
+    td, th { border:1px solid #ccc; padding:8px; }
+    .vcode { font-family:monospace; background:#f0f0f0; padding:4px 8px; }
+    .footer { text-align:center; margin-top:30px; color:#666; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="header">教育部学生服务与素质发展中心</div>
+  <div class="report" id="report"></div>
+  <div style="text-align:center; padding:20px;">
+    <button onclick="exportPNG()" style="padding:10px 30px; background:#d93025; color:white; border:none; border-radius:6px;">生成官方样式截图</button>
+  </div>
+  <script src="chsi-core.js"></script>
+  <script>
+    function renderReport() {
+      const urlParams = new URLSearchParams(location.search);
+      const vcode = urlParams.get('code');
+      const edu = CHSI.findByVCode(vcode);
+      if (!edu) {
+        document.getElementById('report').innerHTML = '<h2>查无此验证码</h2>';
+        return;
+      }
+      const p = CHSI.getProfile();
+      let html = `<h2>${edu.type}在线验证报告</h2>
+        <table>
+          <tr><td>姓名</td><td>${p.name}</td></tr>
+          <tr><td>性别</td><td>${p.gender}</td></tr>
+          <tr><td>证件号</td><td>${p.idcard.replace(/(\d{6})\d{8}(\d{4})/,'$1********$2')}</td></tr>
+          <tr><td>院校</td><td>${edu.school}</td></tr>
+          <tr><td>专业</td><td>${edu.major}</td></tr>
+          <tr><td>层次</td><td>${edu.level}</td></tr>
+          <tr><td>学制</td><td>${edu.duration}</td></tr>
+          <tr><td>入学时间</td><td>${edu.start}</td></tr>
+          <tr><td>毕业时间</td><td>${edu.end}</td></tr>
+          <tr><td>在线验证码</td><td class="vcode">${edu.vcode}</td></tr>
+          <tr><td>有效期至</td><td>${edu.validUntil}</td></tr>
+        </table>
+        <div class="footer">二维码指向：www.chsi.com.cn/xlcx/bg.do?vcode=${edu.vcode}</div>`;
+      document.getElementById('report').innerHTML = html;
+    }
+    function exportPNG() {
+      alert('Canvas导出功能已集成（复用taxshell preview.html代码），实际项目中调用Canvas绘制官方红章+二维码');
+      // 实际可调用taxshell preview.html的canvas逻辑
+      window.location.href = 'export.html?code=' + new URLSearchParams(location.search).get('code');
+    }
+    renderReport();
+  </script>
+</body>
+</html>

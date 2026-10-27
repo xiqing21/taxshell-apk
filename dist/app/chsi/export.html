@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>生成官方截图</title>
+  <style>body { text-align:center; padding:20px; }</style>
+</head>
+<body>
+  <canvas id="c" width="1080" height="1920" style="border:1px solid #ccc; max-width:100%;"></canvas>
+  <br><button onclick="download()">下载PNG</button>
+  <script src="chsi-core.js"></script>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const urlParams = new URLSearchParams(location.search);
+    const vcode = urlParams.get('code') || 'A1B2C3D4E5F6G7H8';
+    const edu = CHSI.findByVCode(vcode) || CHSI.getEducations()[0];
+    const p = CHSI.getProfile();
+
+    // 绘制官方样式（简化版）
+    ctx.fillStyle = '#006633';
+    ctx.fillRect(0,0,1080,120);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.fillText('教育部学生服务与素质发展中心', 80, 80);
+
+    ctx.fillStyle = '#000';
+    ctx.font = '36px sans-serif';
+    ctx.fillText(`${edu.type}在线验证报告`, 80, 220);
+    ctx.font = '28px sans-serif';
+    let y = 320;
+    const lines = [
+      `姓名：${p.name}`,
+      `院校：${edu.school}`,
+      `专业：${edu.major}`,
+      `在线验证码：${edu.vcode}`,
+      `有效期至：${edu.validUntil}`
+    ];
+    lines.forEach(l => { ctx.fillText(l, 80, y); y += 60; });
+
+    // 红章
+    ctx.strokeStyle = '#d93025';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(900, 1600, 120, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = '#d93025';
+    ctx.fillText('教育部', 830, 1580);
+    ctx.fillText('学生服务与素质', 800, 1620);
+    ctx.fillText('发展中心', 850, 1660);
+
+    function download() {
+      const a = document.createElement('a');
+      a.download = `学信报告_${edu.vcode}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+    // 自动提示
+    setTimeout(() => alert('已生成官方样式截图，点击下方按钮下载'), 800);
+  </script>
+</body>
+</html>

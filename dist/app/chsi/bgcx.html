@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>在线验证 - 学信网模拟器</title>
+  <style>
+    body { font-family: system-ui; padding:20px; }
+    input { width:100%; padding:12px; font-size:18px; margin:12px 0; }
+    .btn { width:100%; padding:14px; background:#0066cc; color:white; border:none; font-size:16px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <h2>学信网在线验证</h2>
+  <p>请输入16位在线验证码（A/X/W开头）</p>
+  <input id="vcode" placeholder="A1B2C3D4E5F6G7H8" maxlength="16">
+  <button class="btn" onclick="verify()">查询验证报告</button>
+  <p id="msg" style="color:red;"></p>
+  <script src="chsi-core.js"></script>
+  <script>
+    function verify() {
+      const v = document.getElementById('vcode').value.trim().toUpperCase();
+      const edu = CHSI.findByVCode(v);
+      if (edu) {
+        location.href = `report.html?code=${v}`;
+      } else {
+        document.getElementById('msg').innerText = '查无此验证码，请检查后重试';
+      }
+    }
+  </script>
+</body>
+</html>
